@@ -35,8 +35,10 @@ func main() {
             AppSecret: "your-app-secret",
         },
         Channel:    "your_lark_channel_id",
-        RedisHost:  "localhost", // required for Lark
-        RedisPort:  "6379",      // required for Lark
+        ProviderConfig: map[string]interface{}{
+            "redis_host": "localhost", // required for Lark
+            "redis_port": "6379",      // required for Lark
+        },
     }
     logger := commonlog.NewLogger(cfg)
 

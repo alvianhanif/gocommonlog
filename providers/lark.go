@@ -15,13 +15,15 @@ import (
 
 // getRedisClient returns a Redis client using host/port from cfg, env, or default
 func getRedisClient(cfg types.Config) (*redis.Client, error) {
-	host := cfg.RedisHost
-	port := cfg.RedisPort
-	fmt.Printf("[Lark] Initializing Redis client with host: '%s', port: '%s'\n", host, port)
-	if host == "" || port == "" {
-		fmt.Printf("[Lark] RedisHost and RedisPort must be set in commonlog config\n")
-		return nil, fmt.Errorf("RedisHost and RedisPort must be set in commonlog config")
+	host, ok := cfg.ProviderConfig["redis_host"].(string)
+	if !ok || host == "" {
+		return nil, fmt.Errorf("redis_host must be set in provider_config")
 	}
+	port, ok := cfg.ProviderConfig["redis_port"].(string)
+	if !ok || port == "" {
+		return nil, fmt.Errorf("redis_port must be set in provider_config")
+	}
+	fmt.Printf("[Lark] Initializing Redis client with host: '%s', port: '%s'\n", host, port)
 	addr := host + ":" + port
 	fmt.Printf("[Lark] Connecting to Redis at address: %s\n", addr)
 	client := redis.NewClient(&redis.Options{
