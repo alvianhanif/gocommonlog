@@ -1,5 +1,9 @@
 # gocommonlog
 
+[![CI](https://github.com/alvianhanif/gocommonlog/actions/workflows/ci.yml/badge.svg)](https://github.com/alvianhanif/gocommonlog/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/alvianhanif/gocommonlog)](https://goreportcard.com/report/github.com/alvianhanif/gocommonlog)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A unified logging and alerting library for Go, supporting Slack and Lark integrations via WebClient and Webhook. Features configurable providers, alert levels, and file attachment support.
 
 ## Installation
