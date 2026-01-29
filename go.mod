@@ -1,4 +1,4 @@
-module github.com/alvianhanif/commonlog/go
+module github.com/alvianhanif/gocommonlog
 
 go 1.19
 

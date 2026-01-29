@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/alvianhanif/commonlog/go/types"
+	"github.com/alvianhanif/gocommonlog/types"
 
 	redis "github.com/go-redis/redis/v8"
 )

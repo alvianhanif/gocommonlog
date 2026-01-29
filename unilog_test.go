@@ -1,9 +1,9 @@
-package commonlog
+package gocommonlog
 
 import (
 	"testing"
 
-	"github.com/alvianhanif/commonlog/go/types"
+	"github.com/alvianhanif/gocommonlog/types"
 )
 
 func TestNewLogger(t *testing.T) {

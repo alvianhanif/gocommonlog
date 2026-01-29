@@ -1,10 +1,10 @@
-package commonlog
+package gocommonlog
 
 import (
 	"log"
 
-	"github.com/alvianhanif/commonlog/go/providers"
-	"github.com/alvianhanif/commonlog/go/types"
+	"github.com/alvianhanif/gocommonlog/providers"
+	"github.com/alvianhanif/gocommonlog/types"
 )
 
 // ====================

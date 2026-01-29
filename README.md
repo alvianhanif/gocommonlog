@@ -1,4 +1,4 @@
-# commonlog (Go)
+# gocommonlog
 
 A unified logging and alerting library for Go, supporting Slack and Lark integrations via WebClient and Webhook. Features configurable providers, alert levels, and file attachment support.
 
@@ -7,7 +7,7 @@ A unified logging and alerting library for Go, supporting Slack and Lark integra
 Add to your `go.mod`:
 
 ```bash
-go get github.com/alvianhanif/commonlog/go
+go get github.com/alvianhanif/gocommonlog
 ```
 
 
@@ -17,7 +17,7 @@ go get github.com/alvianhanif/commonlog/go
 package main
 
 import (
-    "github.com/alvianhanif/commonlog/go"
+    "github.com/alvianhanif/gocommonlog"
 )
 
 func main() {
