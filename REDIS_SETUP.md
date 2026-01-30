@@ -2,7 +2,7 @@
 
 This guide covers Redis setup for both local development and production deployments with AWS ElastiCache.
 
-**Note:** Redis is **optional** for gocommonlog. If Redis is not configured, Lark token caching will be disabled and tokens will be fetched on every request. This allows the library to function normally without Redis, though with reduced performance for Lark integrations.
+**Note:** Redis is **optional** for gocommonlog. If Redis is not configured, the library will automatically fall back to in-memory caching for Lark tokens and chat IDs. This provides good performance without requiring Redis infrastructure, though the cache will be lost when the application restarts. For production deployments with multiple instances, Redis is still recommended for shared caching.
 
 ## Local Development Setup
 
@@ -112,12 +112,17 @@ Cluster mode support is not yet implemented in the Go version (requires RedisClu
 
 ## Troubleshooting
 
-If Redis is not available, Lark token caching will be disabled and tokens will be fetched on every request. Check your application logs for connection errors.
+If Redis is not available, the library will automatically fall back to in-memory caching. Check your application logs for connection errors - if Redis connection fails, you'll see debug messages indicating that in-memory caching is being used.
+
+**Cache Behavior:**
+
+- **With Redis:** Persistent caching across application restarts and instances
+- **Without Redis:** In-memory caching with automatic cleanup (tokens expire after 90 minutes, chat IDs after 30 days)
 
 ## Configuration Options
 
 | Option | Type | Default | Description |
-|--------|------|---------|-------------|
+| -------- | ------ | --------- | ------------- |
 | `redis_host` | string | - | Redis server hostname (required) |
 | `redis_port` | string | - | Redis server port (required) |
 | `redis_password` | string | - | Redis AUTH password |
