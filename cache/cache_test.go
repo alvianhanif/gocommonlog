@@ -1,8 +1,8 @@
 package cache
 
 import (
-"testing"
-"time"
+	"testing"
+	"time"
 )
 
 func TestInMemoryCache_SetAndGet(t *testing.T) {
