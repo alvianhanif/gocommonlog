@@ -26,16 +26,16 @@ import (
 
 func main() {
     cfg := commonlog.Config{
-        Provider:   "lark", // or "slack"
         SendMethod: commonlog.MethodWebClient,
-        Token:      "app_id++app_secret", // for Lark, use "app_id++app_secret" format
-        SlackToken: "xoxb-your-slack-token", // dedicated Slack token
-        LarkToken: commonlog.LarkTokenConfig{ // dedicated Lark token
-            AppID:     "your-app-id",
-            AppSecret: "your-app-secret",
-        },
         Channel:    "your_lark_channel_id",
         ProviderConfig: map[string]interface{}{
+            "provider":   "lark", // or "slack"
+            "token":      "app_id++app_secret", // for Lark, use "app_id++app_secret" format
+            "slack_token": "xoxb-your-slack-token", // dedicated Slack token
+            "lark_token": commonlog.LarkTokenConfig{ // dedicated Lark token
+                AppID:     "your-app-id",
+                AppSecret: "your-app-secret",
+            },
             "redis_host": "localhost", // required for Lark
             "redis_port": "6379",      // required for Lark
         },
@@ -72,16 +72,16 @@ WebClient uses the full API with authentication tokens:
 
 ```go
 cfg := commonlog.Config{
-    Provider:   "lark",
     SendMethod: commonlog.MethodWebClient,
-    Token:      "app_id++app_secret", // for Lark
-    SlackToken: "xoxb-your-slack-token", // for Slack
-    LarkToken: commonlog.LarkTokenConfig{
-        AppID:     "your-app-id",
-        AppSecret: "your-app-secret",
-    },
     Channel:   "your_channel",
     ProviderConfig: map[string]interface{}{
+        "provider":   "lark", // or "slack"
+        "token":      "app_id++app_secret", // for Lark
+        "slack_token": "xoxb-your-slack-token", // for Slack
+        "lark_token": commonlog.LarkTokenConfig{
+            AppID:     "your-app-id",
+            AppSecret: "your-app-secret",
+        },
         "redis_host": "localhost", // required for Lark
         "redis_port": "6379",      // required for Lark
     },
@@ -94,10 +94,12 @@ Webhook is simpler and requires only a webhook URL:
 
 ```go
 cfg := commonlog.Config{
-    Provider:   "slack",
     SendMethod: commonlog.MethodWebhook,
-    Token:      "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
     Channel:    "optional-channel-override", // optional
+    ProviderConfig: map[string]interface{}{
+        "provider": "slack",
+        "token":    "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
+    },
 }
 ```
 
@@ -109,11 +111,11 @@ Lark integration requires proper token configuration for authentication. You can
 
 ```go
 cfg := commonlog.Config{
-    Provider:   "lark",
     SendMethod: commonlog.MethodWebClient,
-    Token:      "your_app_id++your_app_secret", // Combined format: app_id++app_secret
     Channel:    "your_channel_id",
     ProviderConfig: map[string]interface{}{
+        "provider": "lark",
+        "token":    "your_app_id++your_app_secret", // Combined format: app_id++app_secret
         "redis_host": "localhost", // Optional: enables caching
         "redis_port": "6379",
     },
@@ -124,14 +126,14 @@ cfg := commonlog.Config{
 
 ```go
 cfg := commonlog.Config{
-    Provider:   "lark",
     SendMethod: commonlog.MethodWebClient,
-    LarkToken: commonlog.LarkTokenConfig{
-        AppID:     "your_app_id",
-        AppSecret: "your_app_secret",
-    },
     Channel:   "your_channel_id",
     ProviderConfig: map[string]interface{}{
+        "provider": "lark",
+        "lark_token": commonlog.LarkTokenConfig{
+            AppID:     "your_app_id",
+            AppSecret: "your_app_secret",
+        },
         "redis_host": "localhost", // Optional: enables caching
         "redis_port": "6379",
     },
@@ -182,12 +184,14 @@ func main() {
 
     // Create config with channel resolver
     config := commonlog.Config{
-        Provider:        "slack",
         SendMethod:      commonlog.MethodWebClient,
-        Token:           "xoxb-your-slack-bot-token",
         ChannelResolver: resolver,
         ServiceName:     "user-service",
         Environment:     "production",
+        ProviderConfig: map[string]interface{}{
+            "provider": "slack",
+            "token":    "xoxb-your-slack-bot-token",
+        },
     }
 
     logger := commonlog.NewLogger(config)
@@ -222,19 +226,27 @@ func (r *CustomResolver) ResolveChannel(level int) string {
 
 ### Common Settings
 
-- **Provider**: `"slack"` or `"lark"`
-- **SendMethod**: `MethodWebClient` (token-based authentication)
+- **SendMethod**: `MethodWebClient` (token-based authentication) or `MethodWebhook`
 - **Channel**: Target channel or chat ID (used if no resolver)
 - **ChannelResolver**: Optional resolver for dynamic channel mapping
 - **ServiceName**: Name of the service sending alerts
 - **Environment**: Environment (dev, staging, production)
 - **Debug**: `true` to enable detailed debug logging of all internal processes
 
-### Provider-Specific
+### ProviderConfig Settings
 
-- **Token**: API token for WebClient authentication (required)
-- **SlackToken**: Dedicated Slack token (optional)
-- **LarkToken**: Dedicated Lark token configuration (optional)
+All provider-specific configuration is now done via the `ProviderConfig` map:
+
+- **provider**: `"slack"` or `"lark"`
+- **token**: API token for WebClient authentication or webhook URL for Webhook method
+- **slack_token**: Dedicated Slack token (optional, overrides token for Slack)
+- **lark_token**: `LarkTokenConfig` object with AppID and AppSecret (optional, overrides token for Lark)
+- **redis_host**: Redis host for Lark caching (optional)
+- **redis_port**: Redis port for Lark caching (optional)
+- **redis_password**: Redis password (optional)
+- **redis_ssl**: Enable SSL for Redis (optional)
+- **redis_cluster_mode**: Enable Redis cluster mode (optional)
+- **redis_db**: Redis database number (optional)
 - **ProviderConfig**: Map of provider-specific settings (e.g., Redis config for Lark)
 
 ## Alert Levels
