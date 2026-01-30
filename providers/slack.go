@@ -74,7 +74,7 @@ func (p *SlackProvider) sendSlackWebhook(message string, attachment *types.Attac
 	formattedMessage := p.formatMessage(message, attachment, cfg)
 
 	// For webhook, the token field contains the webhook URL
-	webhookURL := cfg.Token
+	webhookURL := cfg.ProviderConfig["token"].(string)
 	if webhookURL == "" {
 		err := fmt.Errorf("webhook URL is required for Slack webhook method")
 		types.DebugLog(cfg, "Error: %v", err)
@@ -123,9 +123,9 @@ func (p *SlackProvider) sendSlackWebClient(message string, attachment *types.Att
 	formattedMessage := p.formatMessage(message, attachment, cfg)
 
 	// Use SlackToken if available, otherwise fall back to Token
-	token := cfg.Token
-	if cfg.SlackToken != "" {
-		token = cfg.SlackToken
+	token := cfg.ProviderConfig["token"].(string)
+	if slackToken, ok := cfg.ProviderConfig["slack_token"].(string); ok && slackToken != "" {
+		token = slackToken
 		types.DebugLog(cfg, "sendSlackWebClient: using SlackToken (length: %d)", len(token))
 	} else {
 		types.DebugLog(cfg, "sendSlackWebClient: using Token (length: %d)", len(token))

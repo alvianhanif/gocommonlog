@@ -31,11 +31,36 @@ type Logger struct {
 
 // NewLogger creates a new Logger with the appropriate provider
 func NewLogger(cfg types.Config) *Logger {
-	provider := createProvider(cfg.Provider)
+	// Populate ProviderConfig with top-level fields for backward compatibility
+	if cfg.ProviderConfig == nil {
+		cfg.ProviderConfig = make(map[string]interface{})
+	}
+	if cfg.Provider != "" {
+		cfg.ProviderConfig["provider"] = cfg.Provider
+	}
+	if cfg.Token != "" {
+		cfg.ProviderConfig["token"] = cfg.Token
+	}
+	if cfg.SlackToken != "" {
+		cfg.ProviderConfig["slack_token"] = cfg.SlackToken
+	}
+	if cfg.LarkToken.AppID != "" || cfg.LarkToken.AppSecret != "" {
+		cfg.ProviderConfig["lark_token"] = cfg.LarkToken
+	}
+
+	if _, ok := cfg.ProviderConfig["provider"]; !ok {
+		cfg.ProviderConfig["provider"] = "slack"  // default
+	}
+
+	providerName, ok := cfg.ProviderConfig["provider"].(string)
+	if !ok {
+		providerName = "slack"  // fallback
+	}
+	provider := createProvider(providerName)
 	logger := &Logger{config: cfg, provider: provider}
 
 	types.DebugLog(cfg, "Created new logger with provider: %s, send method: %s, debug: %t",
-		cfg.Provider, cfg.SendMethod, cfg.Debug)
+		providerName, cfg.SendMethod, cfg.Debug)
 
 	return logger
 }

@@ -350,9 +350,9 @@ func (p *LarkProvider) sendLarkWebClient(message string, attachment *types.Attac
 
 	// Use LarkToken if available, otherwise fall back to Token parsing
 	var appID, appSecret string
-	if cfg.LarkToken.AppID != "" && cfg.LarkToken.AppSecret != "" {
-		appID = cfg.LarkToken.AppID
-		appSecret = cfg.LarkToken.AppSecret
+	if larkToken, ok := cfg.ProviderConfig["lark_token"].(types.LarkTokenConfig); ok && larkToken.AppID != "" && larkToken.AppSecret != "" {
+		appID = larkToken.AppID
+		appSecret = larkToken.AppSecret
 		types.DebugLog(cfg, "sendLarkWebClient: fetching tenant access token for appID (length: %d)", len(appID))
 		fetched, err := getTenantAccessToken(cfg, appID, appSecret)
 		if err != nil {

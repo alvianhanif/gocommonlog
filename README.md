@@ -21,7 +21,7 @@ go get github.com/alvianhanif/gocommonlog
 package main
 
 import (
-    "github.com/alvianhanif/gocommonlog"
+    commonlog "github.com/alvianhanif/gocommonlog"
 )
 
 func main() {
@@ -43,12 +43,12 @@ func main() {
     logger := commonlog.NewLogger(cfg)
 
     // Send error with attachment
-    if err := logger.Send(commonlog.ERROR, "System error occurred", &commonlog.Attachment{URL: "https://example.com/log.txt"}); err != nil {
+    if err := logger.Send(commonlog.ERROR, "System error occurred", &commonlog.Attachment{URL: "https://example.com/log.txt"}, ""); err != nil {
         log.Printf("Failed to send alert: %v", err)
     }
 
     // Send info (logs only)
-    logger.Send(commonlog.INFO, "Info message")
+    logger.Send(commonlog.INFO, "Info message", nil, "")
 
     // Send to a specific channel
     if err := logger.SendToChannel(commonlog.ERROR, "Send to another channel", nil, "", "another-channel-id"); err != nil {
@@ -166,7 +166,7 @@ You can configure different channels for different alert levels using a channel 
 package main
 
 import (
-    "github.com/alvianhanif/gocommonlog"
+    commonlog "github.com/alvianhanif/gocommonlog"
 )
 
 func main() {
@@ -193,9 +193,9 @@ func main() {
     logger := commonlog.NewLogger(config)
 
     // These will go to different channels based on level
-    logger.Send(commonlog.INFO, "Info message")    // goes to #general
-    logger.Send(commonlog.WARN, "Warning message") // goes to #warnings
-    logger.Send(commonlog.ERROR, "Error message")  // goes to #alerts
+    logger.Send(commonlog.INFO, "Info message", nil, "")    // goes to #general
+    logger.Send(commonlog.WARN, "Warning message", nil, "") // goes to #warnings
+    logger.Send(commonlog.ERROR, "Error message", nil, "")  // goes to #alerts
 }
 ```
 

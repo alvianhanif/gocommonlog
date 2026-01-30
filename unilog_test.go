@@ -230,3 +230,84 @@ func TestResolveChannelWithoutResolver(t *testing.T) {
 		t.Errorf("Expected #default, got %s", channel)
 	}
 }
+
+func TestProviderConfigPopulation(t *testing.T) {
+	cfg := types.Config{
+		Provider:   "slack",
+		SendMethod: types.MethodWebClient,
+		Token:      "dummy-token",
+		SlackToken: "slack-specific-token",
+		LarkToken:  types.LarkTokenConfig{AppID: "test", AppSecret: "secret"},
+		Channel:    "#test",
+	}
+	logger := NewLogger(cfg)
+
+	// Check that ProviderConfig is populated with top-level fields
+	if provider, ok := logger.config.ProviderConfig["provider"].(string); !ok || provider != "slack" {
+		t.Errorf("Expected provider 'slack' in ProviderConfig, got %v", logger.config.ProviderConfig["provider"])
+	}
+	if token, ok := logger.config.ProviderConfig["token"].(string); !ok || token != "dummy-token" {
+		t.Errorf("Expected token 'dummy-token' in ProviderConfig, got %v", logger.config.ProviderConfig["token"])
+	}
+	if slackToken, ok := logger.config.ProviderConfig["slack_token"].(string); !ok || slackToken != "slack-specific-token" {
+		t.Errorf("Expected slack_token 'slack-specific-token' in ProviderConfig, got %v", logger.config.ProviderConfig["slack_token"])
+	}
+	if larkToken, ok := logger.config.ProviderConfig["lark_token"].(types.LarkTokenConfig); !ok || larkToken.AppID != "test" || larkToken.AppSecret != "secret" {
+		t.Errorf("Expected lark_token with AppID 'test' in ProviderConfig, got %v", logger.config.ProviderConfig["lark_token"])
+	}
+}
+
+func TestProviderConfigUsage(t *testing.T) {
+	// Test that providers use ProviderConfig instead of top-level fields
+	cfg := types.Config{
+		Provider:   "slack",
+		SendMethod: types.MethodWebClient,
+		Token:      "old-token",
+		SlackToken: "new-slack-token",
+		Channel:    "#test",
+		ProviderConfig: map[string]interface{}{
+			"token":      "provider-config-token",
+			"slack_token": "provider-config-slack-token",
+		},
+	}
+	logger := NewLogger(cfg)
+
+	// Since we populate in NewLogger, it should override ProviderConfig with top-level
+	if token, ok := logger.config.ProviderConfig["token"].(string); !ok || token != "old-token" {
+		t.Errorf("Expected token 'old-token' in ProviderConfig (from top-level), got %v", logger.config.ProviderConfig["token"])
+	}
+	if slackToken, ok := logger.config.ProviderConfig["slack_token"].(string); !ok || slackToken != "new-slack-token" {
+		t.Errorf("Expected slack_token 'new-slack-token' in ProviderConfig (from top-level), got %v", logger.config.ProviderConfig["slack_token"])
+	}
+}
+
+func TestProviderConfigOnly(t *testing.T) {
+	// Test that provider_config can be used without top-level fields
+	cfg := types.Config{
+		SendMethod: types.MethodWebClient,
+		Channel:    "#test",
+		ProviderConfig: map[string]interface{}{
+			"provider":   "lark",
+			"token":      "config-token",
+			"slack_token": "config-slack-token",
+			"lark_token": types.LarkTokenConfig{AppID: "config-app", AppSecret: "config-secret"},
+		},
+	}
+	logger := NewLogger(cfg)
+
+	// Check that ProviderConfig values are used
+	if provider, ok := logger.config.ProviderConfig["provider"].(string); !ok || provider != "lark" {
+		t.Errorf("Expected provider 'lark' from ProviderConfig, got %v", logger.config.ProviderConfig["provider"])
+	}
+	if token, ok := logger.config.ProviderConfig["token"].(string); !ok || token != "config-token" {
+		t.Errorf("Expected token 'config-token' from ProviderConfig, got %v", logger.config.ProviderConfig["token"])
+	}
+	if larkToken, ok := logger.config.ProviderConfig["lark_token"].(types.LarkTokenConfig); !ok || larkToken.AppID != "config-app" {
+		t.Errorf("Expected lark_token AppID 'config-app' from ProviderConfig, got %v", logger.config.ProviderConfig["lark_token"])
+	}
+
+	// Verify the logger uses the provider from ProviderConfig
+	if logger.provider == nil {
+		t.Error("Expected provider to be initialized from ProviderConfig")
+	}
+}
