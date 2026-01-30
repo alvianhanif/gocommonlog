@@ -103,7 +103,7 @@ cfg := commonlog.Config{
 
 ### Lark Token Caching
 
-When using Lark, the tenant_access_token is cached in Redis. The expiry is set dynamically from the API response minus 10 minutes. You must set `redis_host` and `redis_port` in your `ProviderConfig`.
+When using Lark, the tenant_access_token is cached in Redis to reduce API calls and improve performance. This is an **optional feature** - if Redis is not configured, tokens will be fetched on every request without caching.
 
 See [REDIS_SETUP.md](REDIS_SETUP.md) for detailed Redis setup instructions including AWS ElastiCache configuration.
 

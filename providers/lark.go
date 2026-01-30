@@ -79,7 +79,9 @@ func cacheLarkToken(cfg types.Config, appID, appSecret, token string) error {
 	key := "commonlog_lark_token:" + appID + ":" + appSecret
 	client, err := getRedisClient(cfg)
 	if err != nil {
-		return err
+		// Redis not configured, skip caching (optional feature)
+		types.DebugLog(cfg, "Lark token caching disabled - Redis not configured")
+		return nil // Don't return error, just skip caching
 	}
 	return client.Set(context.Background(), key, token, 90*time.Minute).Err()
 }
@@ -88,7 +90,9 @@ func cacheChatID(cfg types.Config, channelName, chatID string) error {
 	key := "commonlog_lark_chat_id:" + cfg.Environment + ":" + channelName
 	client, err := getRedisClient(cfg)
 	if err != nil {
-		return err
+		// Redis not configured, skip caching (optional feature)
+		types.DebugLog(cfg, "Lark chat ID caching disabled - Redis not configured")
+		return nil // Don't return error, just skip caching
 	}
 	return client.Set(context.Background(), key, chatID, 0).Err() // No expiry
 }
@@ -97,7 +101,9 @@ func getCachedLarkToken(cfg types.Config, appID, appSecret string) (string, erro
 	key := "commonlog_lark_token:" + appID + ":" + appSecret
 	client, err := getRedisClient(cfg)
 	if err != nil {
-		return "", err
+		// Redis not configured, return empty string (no cached token)
+		types.DebugLog(cfg, "Lark token caching disabled - Redis not configured")
+		return "", nil // No cached token, but no error
 	}
 	result, err := client.Get(context.Background(), key).Result()
 	if err == redis.Nil {
@@ -115,7 +121,9 @@ func getCachedChatID(cfg types.Config, channelName string) (string, error) {
 	key := "commonlog_lark_chat_id:" + cfg.Environment + ":" + channelName
 	client, err := getRedisClient(cfg)
 	if err != nil {
-		return "", err
+		// Redis not configured, return empty string (no cached chat ID)
+		types.DebugLog(cfg, "Lark chat ID caching disabled - Redis not configured")
+		return "", nil // No cached chat ID, but no error
 	}
 	result, err := client.Get(context.Background(), key).Result()
 	if err == redis.Nil {
@@ -247,7 +255,7 @@ func getTenantAccessToken(cfg types.Config, appID, appSecret string) (string, er
 	if result.Code != 0 {
 		return "", fmt.Errorf("lark token error: %s", result.Msg)
 	}
-	// Cache the token for (expire - 10 minutes)
+	// Cache the token for (expire - 10 minutes) - optional
 	expireSeconds := result.Expire - 600
 	if expireSeconds <= 0 {
 		expireSeconds = 60 // fallback to 1 minute if API returns too low
@@ -255,11 +263,14 @@ func getTenantAccessToken(cfg types.Config, appID, appSecret string) (string, er
 	key := "commonlog_lark_token:" + appID + ":" + appSecret
 	client, err := getRedisClient(cfg)
 	if err != nil {
-		return "", fmt.Errorf("failed to get Redis client: %w", err)
-	}
-	err = client.Set(context.Background(), key, result.Token, time.Duration(expireSeconds)*time.Second).Err()
-	if err != nil {
-		return "", fmt.Errorf("failed to cache token: %w", err)
+		// Redis not configured, skip caching but continue with token
+		types.DebugLog(cfg, "Lark token caching disabled - Redis not configured")
+	} else {
+		err = client.Set(context.Background(), key, result.Token, time.Duration(expireSeconds)*time.Second).Err()
+		if err != nil {
+			fmt.Printf("[Lark] Warning: failed to cache token: %v\n", err)
+			// Don't return error, just log warning and continue
+		}
 	}
 	return result.Token, nil
 }

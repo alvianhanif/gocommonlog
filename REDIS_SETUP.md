@@ -2,6 +2,8 @@
 
 This guide covers Redis setup for both local development and production deployments with AWS ElastiCache.
 
+**Note:** Redis is **optional** for gocommonlog. If Redis is not configured, Lark token caching will be disabled and tokens will be fetched on every request. This allows the library to function normally without Redis, though with reduced performance for Lark integrations.
+
 ## Local Development Setup
 
 ### Install Redis
