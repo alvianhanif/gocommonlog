@@ -8,84 +8,13 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 
+	"github.com/alvianhanif/gocommonlog/cache"
 	"github.com/alvianhanif/gocommonlog/types"
 
 	redis "github.com/go-redis/redis/v8"
 )
-
-// In-memory cache for Lark tokens when Redis is not available
-type inMemoryCache struct {
-	data sync.Map // key -> cacheItem
-}
-
-type cacheItem struct {
-	value   string
-	expiry  time.Time
-}
-
-func newInMemoryCache() *inMemoryCache {
-	cache := &inMemoryCache{}
-	// Start cleanup goroutine
-	go cache.cleanupWorker()
-	return cache
-}
-
-func (c *inMemoryCache) get(key string) (string, bool) {
-	value, ok := c.data.Load(key)
-	if !ok {
-		return "", false
-	}
-	item := value.(cacheItem)
-	if time.Now().After(item.expiry) {
-		// Expired, remove it
-		c.data.Delete(key)
-		return "", false
-	}
-	return item.value, true
-}
-
-func (c *inMemoryCache) set(key, value string, duration time.Duration) {
-	item := cacheItem{
-		value:  value,
-		expiry: time.Now().Add(duration),
-	}
-	c.data.Store(key, item)
-}
-
-func (c *inMemoryCache) cleanupWorker() {
-	ticker := time.NewTicker(5 * time.Minute)
-	defer ticker.Stop()
-	for range ticker.C {
-		c.cleanupExpired()
-	}
-}
-
-func (c *inMemoryCache) cleanupExpired() {
-	now := time.Now()
-	expiredKeys := make([]string, 0)
-	
-	c.data.Range(func(key, value interface{}) bool {
-		item := value.(cacheItem)
-		if now.After(item.expiry) {
-			expiredKeys = append(expiredKeys, key.(string))
-		}
-		return true
-	})
-	
-	for _, key := range expiredKeys {
-		c.data.Delete(key)
-	}
-	
-	if len(expiredKeys) > 0 {
-		fmt.Printf("[Lark] Cleaned up %d expired tokens from memory cache\n", len(expiredKeys))
-	}
-}
-
-// Global in-memory cache instance
-var memoryCache = newInMemoryCache()
 
 // getRedisClient returns a Redis client using host/port from cfg, env, or default
 func getRedisClient(cfg types.Config) (*redis.Client, error) {
@@ -152,7 +81,7 @@ func cacheLarkToken(cfg types.Config, appID, appSecret, token string) error {
 	client, err := getRedisClient(cfg)
 	if err != nil {
 		// Fallback to in-memory cache
-		memoryCache.set(key, token, 90*time.Minute)
+		cache.GetGlobalCache().Set(key, token, 90*time.Minute)
 		types.DebugLog(cfg, "Lark token cached in memory")
 		return nil
 	}
@@ -164,7 +93,7 @@ func cacheChatID(cfg types.Config, channelName, chatID string) error {
 	client, err := getRedisClient(cfg)
 	if err != nil {
 		// Fallback to in-memory cache (30 days expiry)
-		memoryCache.set(key, chatID, 30*24*time.Hour)
+		cache.GetGlobalCache().Set(key, chatID, 30*24*time.Hour)
 		types.DebugLog(cfg, "Lark chat ID cached in memory")
 		return nil
 	}
@@ -176,7 +105,7 @@ func getCachedLarkToken(cfg types.Config, appID, appSecret string) (string, erro
 	client, err := getRedisClient(cfg)
 	if err != nil {
 		// Fallback to in-memory cache
-		if token, found := memoryCache.get(key); found {
+		if token, found := cache.GetGlobalCache().Get(key); found {
 			types.DebugLog(cfg, "Lark token retrieved from memory")
 			return token, nil
 		}
@@ -199,7 +128,7 @@ func getCachedChatID(cfg types.Config, channelName string) (string, error) {
 	client, err := getRedisClient(cfg)
 	if err != nil {
 		// Fallback to in-memory cache
-		if chatID, found := memoryCache.get(key); found {
+		if chatID, found := cache.GetGlobalCache().Get(key); found {
 			types.DebugLog(cfg, "Lark chat ID retrieved from memory")
 			return chatID, nil
 		}
