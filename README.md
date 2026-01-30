@@ -101,9 +101,60 @@ cfg := commonlog.Config{
 }
 ```
 
+### Lark Token Configuration
+
+Lark integration requires proper token configuration for authentication. You can configure Lark tokens in two ways:
+
+#### Method 1: Combined Token Format
+
+```go
+cfg := commonlog.Config{
+    Provider:   "lark",
+    SendMethod: commonlog.MethodWebClient,
+    Token:      "your_app_id++your_app_secret", // Combined format: app_id++app_secret
+    Channel:    "your_channel_id",
+    ProviderConfig: map[string]interface{}{
+        "redis_host": "localhost", // Optional: enables caching
+        "redis_port": "6379",
+    },
+}
+```
+
+#### Method 2: Dedicated Lark Token Object
+
+```go
+cfg := commonlog.Config{
+    Provider:   "lark",
+    SendMethod: commonlog.MethodWebClient,
+    LarkToken: commonlog.LarkTokenConfig{
+        AppID:     "your_app_id",
+        AppSecret: "your_app_secret",
+    },
+    Channel:   "your_channel_id",
+    ProviderConfig: map[string]interface{}{
+        "redis_host": "localhost", // Optional: enables caching
+        "redis_port": "6379",
+    },
+}
+```
+
 ### Lark Token Caching
 
-When using Lark, the tenant_access_token is cached in Redis to reduce API calls and improve performance. This is an **optional feature** - if Redis is not configured, tokens will be fetched on every request without caching.
+When using Lark, the `tenant_access_token` is cached to reduce API calls and improve performance. The library supports both Redis and in-memory caching:
+
+- **Redis Caching** (recommended for production): Persistent across application restarts and shared between instances
+- **In-Memory Caching** (fallback): Automatic fallback when Redis is unavailable, with 90-minute token expiry
+
+**Token Expiry Details:**
+
+- API tokens expire after 2 hours (7200 seconds)
+- Cached tokens expire after 90 minutes (5400 seconds) to ensure freshness
+- Chat ID mappings are cached for 30 days
+
+**Cache Keys:**
+
+- Lark tokens: `commonlog_lark_token:{app_id}:{app_secret}`
+- Chat IDs: `commonlog_lark_chat_id:{environment}:{channel_name}`
 
 See [REDIS_SETUP.md](REDIS_SETUP.md) for detailed Redis setup instructions including AWS ElastiCache configuration.
 
