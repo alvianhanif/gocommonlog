@@ -3,9 +3,11 @@ package providers
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/alvianhanif/gocommonlog/types"
@@ -23,13 +25,47 @@ func getRedisClient(cfg types.Config) (*redis.Client, error) {
 	if !ok || port == "" {
 		return nil, fmt.Errorf("redis_port must be set in provider_config")
 	}
+
+	// Optional configuration for ElastiCache support
+	password, _ := cfg.ProviderConfig["redis_password"].(string)
+	ssl, _ := cfg.ProviderConfig["redis_ssl"].(bool)
+	clusterMode, _ := cfg.ProviderConfig["redis_cluster_mode"].(bool)
+	db := 0
+	if dbVal, ok := cfg.ProviderConfig["redis_db"]; ok {
+		if dbInt, ok := dbVal.(int); ok {
+			db = dbInt
+		} else if dbStr, ok := dbVal.(string); ok {
+			if parsed, err := strconv.Atoi(dbStr); err == nil {
+				db = parsed
+			}
+		}
+	}
+
 	fmt.Printf("[Lark] Initializing Redis client with host: '%s', port: '%s'\n", host, port)
+
+	if clusterMode {
+		// For cluster mode, we need to use RedisCluster
+		// Note: This requires additional setup and the go-redis/redis/v8 library supports clustering
+		return nil, fmt.Errorf("cluster mode not yet implemented for Go version - requires RedisCluster client")
+	}
+
 	addr := host + ":" + port
 	fmt.Printf("[Lark] Connecting to Redis at address: %s\n", addr)
-	client := redis.NewClient(&redis.Options{
-		Addr: addr,
-		DB:   0,
-	})
+
+	options := &redis.Options{
+		Addr:     addr,
+		Password: password,
+		DB:       db,
+	}
+
+	// Configure TLS if SSL is enabled
+	if ssl {
+		options.TLSConfig = &tls.Config{
+			InsecureSkipVerify: false, // Set to true only for development
+		}
+	}
+
+	client := redis.NewClient(options)
 	ctx := context.Background()
 	if err := client.Ping(ctx).Err(); err != nil {
 		fmt.Printf("[Lark] Failed to ping Redis at %s: %v\n", addr, err)
